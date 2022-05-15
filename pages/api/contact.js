@@ -16,6 +16,7 @@
 // along with Divide Projects Website.  If not, see <http://www.gnu.org/licenses/>.
 
 import requestIp from 'request-ip'
+let { IPinfoWrapper } = require("node-ipinfo");
 
 async function contact(req, res) {
     // Block the requst if not a POST request
@@ -26,6 +27,43 @@ async function contact(req, res) {
     // Block the reqyeust if the whitelist key is not present
     if (!req.headers.key || req.headers.key.toLowerCase() !== "contact.divideprojects.web") {
         return res.status(400).send("Bad Requset")
+    }
+
+    // Block the request if the client IP is in blocked list
+    const ip = requestIp.getClientIp(req)
+    const ipinfo = new IPinfoWrapper(process.env.IPINFO_API_KEY || "f5868fc45a9971")
+    const info = await ipinfo.lookupASN(ip.toString())
+
+    const blocked = [
+        "google",
+        "amazon",
+        "cloudflare",
+        "digitalocean",
+        "linode",
+        "hostinger",
+        "godaddy",
+        "softlayer",
+        "unified",
+        "new dream network",
+        "unified layer",
+        "singlehop",
+        "constant",
+        "ibm",
+        "microsoft",
+        "tencent",
+        "namecheap",
+        "akamai",
+        "alibaba",
+        "hostwinds",
+        "ovh",
+        "upcloud",
+        "wholesale",
+        "avsat",
+        "tefincom",
+        "hetzner"
+    ]
+    if (!info || blocked.some((res) => info.org.toString().toLowerCase().includes(res))) {
+        return res.status(403).json({ success: false, sent: false, reason: "Your IP Address is in the block list." })
     }
 
     // Check Required Data
@@ -49,7 +87,8 @@ async function contact(req, res) {
     const msg = `#CONTACT_REQUEST
     Name: ${name}
     eMail: ${email}
-    IP: ${requestIp.getClientIp(req)}
+    IP: ${ip}
+    ASN: ${info.org}
     Message:\n${message}
     `
 

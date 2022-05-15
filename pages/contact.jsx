@@ -115,7 +115,9 @@ export default function Contact() {
     // If the response is error show the Internal Error Occured message
     setUtils({ loading: false });
     return showError(
-      "An error occured while submitting your message, Please try again later."
+      res.reason
+        ? res.reason
+        : "An error occured while submitting your message, Please try again later."
     );
   };
 
